@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
+<title>shiftlock report {{ decision.run_id }}</title>
+<style>
+  body { font: 14px/1.5 system-ui, sans-serif; margin: 24px auto; max-width: 1100px; padding: 0 16px; color: #1f2933; }
+  h1 { font-size: 22px; } h2 { font-size: 17px; margin-top: 28px; }
+  .verdict { display: inline-block; padding: 4px 12px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
+  .go { background: #e8f5e9; color: #1b5e20; } .conditional { background: #fff8e1; color: #8a5300; }
+  .no-go { background: #ffebee; color: #b71c1c; } .inconclusive { background: #eceff1; color: #37474f; }
+  table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #cbd2d9; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #f5f7fa; } pre { white-space: pre-wrap; word-break: break-word; margin: 0; max-height: 240px; overflow: auto; font-size: 12px; }
+  .muted { color: #616e7c; }
+</style>
+</head>
+<body>
+<h1>Can you switch from <code>{{ decision.baseline.model }}</code> to <code>{{ decision.candidate.model }}</code>?</h1>
+<p><span class="verdict {{ verdict.decision.value }}">{{ verdict.decision.value }}</span></p>
+<ul>{% for reason in verdict.reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
+
+<h2>Summary</h2>
+<table>
+  <tr><th>Usable cases</th><td>{{ verdict.usable_cases }} of {{ verdict.total_cases }}</td></tr>
+  <tr><th>Check pass rate (baseline / candidate)</th><td>{{ "%.1f%%"|format(verdict.baseline_pass_rate * 100) if verdict.baseline_pass_rate is not none else "n/a" }} / {{ "%.1f%%"|format(verdict.candidate_pass_rate * 100) if verdict.candidate_pass_rate is not none else "n/a" }}</td></tr>
+  <tr><th>Blocking regressions</th><td>{{ verdict.regressions|length }}</td></tr>
+  <tr><th>Advisory regressions</th><td>{{ verdict.advisory_regressions|length }}</td></tr>
+  <tr><th>Cost change</th><td>{{ "%+.0f%%"|format(verdict.cost_change * 100) if verdict.cost_change is not none else "unknown (no price data)" }}</td></tr>
+  <tr><th>Median latency change</th><td>{{ "%+.0f%%"|format(verdict.latency_change * 100) if verdict.latency_change is not none else "n/a" }}</td></tr>
+  <tr><th>Provider error rate</th><td>{{ "%.1f%%"|format(verdict.error_rate * 100) }}</td></tr>
+  <tr><th>Cost cap reached</th><td>{{ "yes" if decision.cost_cap_reached else "no" }}</td></tr>
+</table>
+
+<h2>Candidate failures</h2>
+{% if failures %}
+<table>
+  <tr><th>Case</th><th>Check</th><th>Detail</th><th>Baseline output</th><th>Candidate output</th></tr>
+  {% for failure in failures %}
+  <tr>
+    <td>{{ failure.case_id }}{% if failure.sample %} #{{ failure.sample }}{% endif %}</td>
+    <td>{{ failure.check }}<br><span class="muted">{{ "blocking" if failure.blocking else "advisory" }}</span></td>
+    <td>{{ failure.detail }}</td>
+    <td><pre>{{ failure.baseline.text if failure.baseline and failure.baseline.text else "" }}{% if failure.baseline %}{% for call in failure.baseline.tool_calls %}
+{{ call.name }}({{ call.raw_arguments }}){% endfor %}{% endif %}</pre></td>
+    <td><pre>{{ failure.candidate.text if failure.candidate and failure.candidate.text else "" }}{% if failure.candidate %}{% for call in failure.candidate.tool_calls %}
+{{ call.name }}({{ call.raw_arguments }}){% endfor %}{% endif %}</pre></td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>None.</p>
+{% endif %}
+
+<p class="muted">Run {{ decision.run_id }} · shiftlock {{ decision.shiftlock_version }} · verdict rules {{ verdict.rule_version }} · {{ decision.created_at }}. This report contains your prompt outputs; keep it private.</p>
+</body>
+</html>

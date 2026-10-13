@@ -1,0 +1,16 @@
+# List prices in USD per million tokens. Maintained by hand: every entry needs a source URL and
+# the date it was checked. Models missing here show cost as "unknown". Override with `prices:` in
+# shiftlock.yaml. Cache and batch discounts are not modelled.
+
+anthropic/claude-haiku-4-5-20251001:
+  input_per_million: 1.00
+  output_per_million: 5.00
+  source: https://platform.claude.com/docs/en/about-claude/pricing
+  as_of: 2026-10-13
+
+# Rate for prompts up to 100,000 tokens; longer prompts cost more.
+anthropic/claude-haiku-5-5:
+  input_per_million: 0.10
+  output_per_million: 0.50
+  source: https://platform.claude.com/docs/en/about-claude/pricing
+  as_of: 2026-10-13
