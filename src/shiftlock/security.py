@@ -65,7 +65,10 @@ def read_api_key(provider: str) -> SecretStr:
 
 
 def make_private_directory(path: Path) -> Path:
-    path.mkdir(mode=0o700, parents=True, exist_ok=True)
+    missing = [directory for directory in (path, *path.parents) if not directory.exists()]
+    for directory in reversed(missing):
+        directory.mkdir(mode=0o700, exist_ok=True)
+        directory.chmod(0o700)
     path.chmod(0o700)
     return path
 
